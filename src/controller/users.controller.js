@@ -1,118 +1,49 @@
-import * as userService from '../services/users.service.js';
+import { ForbiddenError, NotFoundError } from "../core/error.response.js";
+import * as userService from "../services/users.service.js";
+import catchAsync from "../utils/catchAsync.js";
+import { sendSuccess } from "../utils/responseHelper.js";
 
-const getAllUsers = async (req, res) => {
-    try{
-        const users = await userService.getAllUsers();
-        return res.status(200).json({
-            success: true,
-            message: 'get all users successfully',
-            data: users
-        });
-    } catch (error){
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-            error: error.message
-        });
-    }
-}
+const getAllUsers = catchAsync(async (req, res) => {
+  const users = await userService.getAllUsers();
+  return sendSuccess(res, 200, "Users retrieved successfully", users);
+});
 
+const getUserById = catchAsync(async (req, res) => {
+  const userId = req.params.id;
+  const user = await userService.getUserById(userId);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return sendSuccess(res, 200, "User retrieved successfully", user);
+});
 
-const getUserById = async (req, res) => {
-    const userId = req.params.id;
-    try{
-        const user = await userService.getUserById(userId);
-        if(!user){
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            });
-        }
-        return res.status(200).json({
-            success: true,
-            message: 'get user by id successfully',
-            data: user
-        });
-    } catch(error){
-        res.status(500).json({
-            success: false,
-            message: "internal server error",
-            error: error.message
-        });
-    }
-}
+const createUser = catchAsync(async (req, res) => {
+  const createUserRequest = req.body;
 
-const createUser = async (req, res) => {
-    const createUserRequest = req.body;
-    try{
-        const user = await userService.addUser(createUserRequest);
-        if(!user){
-            return res.status(403).json({
-                success: true,
-                message: "create user falure",
-            })
-        }
-        return res.status(201).json({
-            success: true,
-            message: "create User successfully",
-            data: user
-        });
-    } catch(err){
-        res.status(500).json({
-            success: false,
-            message: "internal server error",
-            error: err.message
-        });
-    }
-}
+  const user = await userService.addUser(createUserRequest);
 
-const updateUser = async (req, res) => {
-    const updateUserRequest = req.body;
-    const userId = req.params.id;
-    try{
-        const user = await userService.updateUser(userId, updateUserRequest);
-        if(!user){
-            return res.status(403).json({
-                success: true,
-                message: "update user falure",
-            })
-        }
-        return res.status(201).json({
-            success: true,
-            message: "update User successfully",
-            data: user
-        });
-    } catch(err){
-        res.status(500).json({
-            success: false,
-            message: "internal server error",
-            error: err.message
-        });
-    }
-}
+  return sendSuccess(res, 201, "create user successfully", user);
+});
 
-const deleteUser = async (req, res) => {
-    const userId = req.params.id;
-    try{
-        const success = await userService.deleteUser(userId);
-        if(!success){
-            return res.status(403).json({
-                success: true,
-                message: "unable to delete user",
-            })
-        }
-        return res.status(204).json({
-            success: true,
-            message: "delete User successfully",
-        });
-    } catch(err){
-        res.status(500).json({
-            success: false,
-            message: "internal server error",
-            error: err.message
-        });
-    }
+const updateUser = catchAsync(async (req, res) => {
+  const updateUserRequest = req.body;
+  const userId = req.params.id;
 
-}
+  const user = await userService.updateUser(userId, updateUserRequest);
+  if (!user) {
+    throw new ForbiddenError("forbidden");
+  }
+  return sendSuccess(res, 201, "update user successfully", user);
+});
 
-export { getAllUsers, getUserById , createUser, updateUser, deleteUser };
+const deleteUser = catchAsync(async (req, res) => {
+  const userId = req.params.id;
+
+  const success = await userService.deleteUser(userId);
+  if (!success) {
+    throw new ForbiddenError("forbidden");
+  }
+  return sendSuccess(res, 204, "delete user successfully");
+});
+
+export { getAllUsers, getUserById, createUser, updateUser, deleteUser };
