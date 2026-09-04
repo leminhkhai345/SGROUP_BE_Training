@@ -1,4 +1,4 @@
-import { ConflictError } from "../core/error.response.js";
+import { ConflictError, NotFoundError } from "../core/error.response.js";
 import { readData, writeData } from "../repository/readData.js";
 
 const getAllUsers = async () => {
@@ -8,7 +8,11 @@ const getAllUsers = async () => {
 
 const getUserById = async (userId) => {
   const data = await readData();
-  return data.users.find((u) => u.id === parseInt(userId));
+  const user = data.users.find((u) => u.id === parseInt(userId));
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return user;
 };
 
 const addUser = async (createUserRequest) => {
@@ -31,7 +35,9 @@ const addUser = async (createUserRequest) => {
 const updateUser = async (userId, updateUserRequest) => {
   const data = await readData();
   const user = data.users.find((user) => user.id === parseInt(userId));
-
+    if (!user) {
+    throw new NotFoundError("user not found");
+  }
   if (user) {
     user.email = updateUserRequest.email;
     user.name = updateUserRequest.name;

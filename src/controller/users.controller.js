@@ -11,9 +11,6 @@ const getAllUsers = catchAsync(async (req, res) => {
 const getUserById = catchAsync(async (req, res) => {
   const userId = req.params.id;
   const user = await userService.getUserById(userId);
-  if (!user) {
-    throw new NotFoundError("User not found");
-  }
   return sendSuccess(res, 200, "User retrieved successfully", user);
 });
 
@@ -30,19 +27,15 @@ const updateUser = catchAsync(async (req, res) => {
   const userId = req.params.id;
 
   const user = await userService.updateUser(userId, updateUserRequest);
-  if (!user) {
-    throw new ForbiddenError("forbidden");
-  }
+
   return sendSuccess(res, 201, "update user successfully", user);
 });
 
 const deleteUser = catchAsync(async (req, res) => {
   const userId = req.params.id;
 
-  const success = await userService.deleteUser(userId);
-  if (!success) {
-    throw new ForbiddenError("forbidden");
-  }
+  userService.deleteUser(userId);
+
   return sendSuccess(res, 204, "delete user successfully");
 });
 
