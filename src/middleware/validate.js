@@ -26,7 +26,7 @@ export const validate = (rules) => {
     };
 };
 
-export const createUserRules = [
+export const registerRules = [
     body('name')
         .trim()
         .notEmpty().withMessage('Name is required')
@@ -56,8 +56,18 @@ export const updateUserRules = [
         .isEmail().withMessage('Email is not valid')
         .normalizeEmail(),
 
-    body('password')
-        .trim()
-        .notEmpty('password is required')
-        .isLength({ min: 6, max: 15 }).withMessage('password must be at least 6 charactor'),
+];
+
+
+
+export const loginRules = [
+  body("email")
+    .trim()
+    .notEmpty().withMessage("Email must be not empty")
+    .isEmail().withMessage("Email is invalid")
+    .normalizeEmail(),
+
+  body("password")
+    .trim()
+    .notEmpty().withMessage("password is required"),
 ];

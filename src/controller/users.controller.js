@@ -1,10 +1,11 @@
-import { ForbiddenError, NotFoundError } from "../core/error.response.js";
 import * as userService from "../services/users.service.js";
 import catchAsync from "../utils/catchAsync.js";
 import { sendSuccess } from "../utils/responseHelper.js";
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const users = await userService.getAllUsers();
+  const sortBy = req.params.sortBy;
+  const order = req.params.order;
+  const users = await userService.getAllUsers({sortBy, order});
   return sendSuccess(res, 200, "Users retrieved successfully", users);
 });
 
@@ -14,13 +15,7 @@ const getUserById = catchAsync(async (req, res) => {
   return sendSuccess(res, 200, "User retrieved successfully", user);
 });
 
-const createUser = catchAsync(async (req, res) => {
-  const createUserRequest = req.body;
 
-  const user = await userService.addUser(createUserRequest);
-
-  return sendSuccess(res, 201, "create user successfully", user);
-});
 
 const updateUser = catchAsync(async (req, res) => {
   const updateUserRequest = req.body;
@@ -34,9 +29,16 @@ const updateUser = catchAsync(async (req, res) => {
 const deleteUser = catchAsync(async (req, res) => {
   const userId = req.params.id;
 
-  userService.deleteUser(userId);
+  await userService.deleteUser(userId);
 
   return sendSuccess(res, 204, "delete user successfully");
 });
 
-export { getAllUsers, getUserById, createUser, updateUser, deleteUser };
+
+const getMyProfile = catchAsync(async (req, res, next) => {
+  const email = req.user.email;
+  const result = await userService.getMyProfile(email);
+  return sendSuccess(res, 200, "get my profile", result);
+});
+
+export { getAllUsers, getUserById, updateUser, deleteUser, getMyProfile };

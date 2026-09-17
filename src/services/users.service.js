@@ -1,64 +1,49 @@
 import { ConflictError, NotFoundError } from "../core/error.response.js";
-import { readData, writeData } from "../repository/readData.js";
+import * as userRepository from "../repository/users.repository.js";
+import * as passwordHelper from "../utils/passwordHelper.js";
 
-const getAllUsers = async () => {
-  const data = await readData();
-  return data.users;
+const getAllUsers = async ({sortBy, order}) => {
+  return await userRepository.findAll({sortBy, order});
 };
 
 const getUserById = async (userId) => {
-  const data = await readData();
-  const user = data.users.find((u) => u.id === parseInt(userId));
+  const user =  await userRepository.findById(userId);
   if (!user) {
     throw new NotFoundError("User not found");
   }
   return user;
 };
 
-const addUser = async (createUserRequest) => {
-  const data = await readData();
-  const user = data.users.find((u) => u.email === createUserRequest.email);
-  if (!user) {
-    const user = {
-      id: data.users.length + 1,
-      name: createUserRequest.name,
-      email: createUserRequest.email,
-      password: createUserRequest.password,
-    };
-    data.users.push(user);
-    await writeData(data);
-    return user;
-  }
-  else throw new ConflictError('Email already exists');
-};
 
 const updateUser = async (userId, updateUserRequest) => {
-  const data = await readData();
-  const user = data.users.find((user) => user.id === parseInt(userId));
+  const email = updateUserRequest.email;
+  const name = updateUserRequest.name;
+  const user = await userRepository.findById(userId);
     if (!user) {
     throw new NotFoundError("user not found");
   }
   if (user) {
-    user.email = updateUserRequest.email;
-    user.name = updateUserRequest.name;
-    user.password = updateUserRequest.password;
-
-    await writeData(data);
-    return user;
+    return await userRepository.update(userId, {email, name});
   }
 };
 
 const deleteUser = async (userId) => {
-  const data = await readData();
-  const userIndex = data.users.findIndex(
-    (user) => user.id === parseInt(userId),
-  );
-  if (userIndex !== -1) {
-    data.users.splice(userIndex, 1);
-    await writeData(data);
-    return true;
-  }
-  return false;
+  await userRepository.deleteById(userId);
 };
 
-export { getAllUsers, getUserById, addUser, updateUser, deleteUser };
+
+const getMyProfile = async (email) => {
+  const data = await userRepository.findByEmail(email);
+  if(!data) {
+    throw new NotFoundError("can not find profile");
+  }
+  const user = {
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    dob: data.dob,
+  }
+  return user;
+}
+
+export { getAllUsers, getUserById, updateUser, deleteUser, getMyProfile };
