@@ -1,0 +1,73 @@
+import { validationResult, body } from 'express-validator';
+import { BadRequestError } from '../core/error.response.js';
+
+export const validate = (rules) => {
+    return async (req, res, next) => {
+        // Chạy tuần tự từng rule
+        for (const rule of rules) {
+            await rule.run(req);
+        }
+
+        const errors = validationResult(req);
+        if (errors.isEmpty()) {
+            return next();
+        }
+
+        // Gộp tất cả lỗi thành mảng { field, message }
+        const formattedErrors = errors.array().map((err) => ({
+            field: err.path,
+            message: err.msg,
+        }));
+
+        // Ném BadRequestError kèm danh sách lỗi chi tiết
+        const error = new BadRequestError('Validation failed');
+        error.errors = formattedErrors;
+        return next(error);
+    };
+};
+
+export const registerRules = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Name is required')
+        .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
+
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email is required')
+        .isEmail().withMessage('Email is not valid')
+        .normalizeEmail(),
+
+    body('password')
+        .trim()
+        .notEmpty('password is required')
+        .isLength({ min: 6, max: 15 }).withMessage('password must be at least 6 charactor'),
+];
+
+export const updateUserRules = [
+    body('name')
+        .trim()
+        .notEmpty().withMessage('Name is required')
+        .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
+
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email is required')
+        .isEmail().withMessage('Email is not valid')
+        .normalizeEmail(),
+
+];
+
+
+
+export const loginRules = [
+  body("email")
+    .trim()
+    .notEmpty().withMessage("Email must be not empty")
+    .isEmail().withMessage("Email is invalid")
+    .normalizeEmail(),
+
+  body("password")
+    .trim()
+    .notEmpty().withMessage("password is required"),
+];
