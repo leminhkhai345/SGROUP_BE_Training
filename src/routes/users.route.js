@@ -2,6 +2,7 @@ import {Router} from "express";
 import * as userController from "../controller/users.controller.js";
 import { updateUserRules, validate } from "../middleware/validate.js";
 import { authenticate } from "../middleware/auth.middleware.js";
+import * as uploadMiddleware from "../middleware/upload.middleware.js";
 
 const router = new Router();
 
@@ -10,5 +11,6 @@ router.get("/", userController.getAllUsers);
 router.get("/:id/", userController.getUserById);
 router.put("/:id/", validate(updateUserRules), userController.updateUser);
 router.delete("/:id/", userController.deleteUser);
+router.post("/avatar", authenticate,uploadMiddleware.upload.single("file"), uploadMiddleware.requireFile, userController.updateAvatar);
 
 export default router;

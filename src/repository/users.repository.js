@@ -49,4 +49,14 @@ const deleteById = async (id) => {
   return result.rows[0] || null;
 };
 
-export {findAll, findByEmail, findById, create, deleteById, update};
+const updateAvatar = async (id, avt_url) => {
+    const result = await pool.query(
+    `UPDATE users 
+     SET avt_url = $1
+     WHERE id = $2 RETURNING name, email, role, avt_url`,
+    [avt_url, id]
+  );
+  return result.rows[0] || null;
+}
+
+export {findAll, findByEmail, findById, create, deleteById, update, updateAvatar};

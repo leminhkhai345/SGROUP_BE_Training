@@ -41,4 +41,10 @@ const getMyProfile = catchAsync(async (req, res, next) => {
   return sendSuccess(res, 200, "get my profile", result);
 });
 
-export { getAllUsers, getUserById, updateUser, deleteUser, getMyProfile };
+const updateAvatar = catchAsync(async (req, res, next) => {
+  const email = req.user.email;
+  const result = await userService.updateAvatar(email, req.file);
+  return sendSuccess(res, 200, "update avt successfully", result);
+});
+
+export { getAllUsers, getUserById, updateUser, deleteUser, getMyProfile, updateAvatar };
