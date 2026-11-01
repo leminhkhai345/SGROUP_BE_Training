@@ -1,25 +1,37 @@
-import jwt from "jsonwebtoken";
-import * as jwtHelper from "../utils/jwtHelper.js";
-import { UnauthorizedError } from "../core/error.response.js";
+import { verifyToken } from "../utils/jwtHelper.js";
+import { UnauthorizedError, ForbiddenError } from "../core/error.response.js";
+import { getUserAccess, hasPermission, requireActor } from "../services/authorization.service.js";
 
-export const authenticate = (req, res, next) => {
-    try {
-        const authHeader = req.headers.authorization;
+const authenticate = async (req, res, next) => {
+  try {
+    const match = typeof req.headers.authorization === "string" && /^Bearer\s+(\S+)$/i.exec(req.headers.authorization);
+    if (!match) throw new UnauthorizedError("Bearer token is required");
+    const payload = verifyToken(match[1]);
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedError("invalid token");
-        }
-
-        const token = authHeader.split(" ")[1];
-
-        const decoded = jwtHelper.verifyToken(token);
-
-        req.user = decoded;
-
-        next();
-    } catch (error) {
-        return res.status(401).json({
-            message: "Invalid or expired token",
-        });
+    req.user = await getUserAccess(payload.id);
+    next();
+  } catch (error) {
+    if (["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(error.name)) {
+      return next(new UnauthorizedError("Invalid or expired token"));
     }
+    next(error);
+  }
 };
+
+const authorizeRoles = (...roles) => (req, res, next) => {
+  try {
+    requireActor(req.user);
+    if (!roles.some((role) => req.user.roles.includes(role))) throw new ForbiddenError("Insufficient role");
+    next();
+  } catch (error) { next(error); }
+};
+
+const authorizePermissions = (...permissions) => (req, res, next) => {
+  try {
+    requireActor(req.user);
+    if (!permissions.every((permission) => hasPermission(req.user, permission))) throw new ForbiddenError("Insufficient permissions");
+    next();
+  } catch (error) { next(error); }
+};
+
+export { authenticate, authorizeRoles, authorizePermissions };

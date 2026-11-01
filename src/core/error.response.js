@@ -6,33 +6,46 @@ class ApiError extends Error {
     }
 }
 
-export class BadRequestError extends ApiError {
+class BadRequestError extends ApiError {
     constructor(message = 'Bad request'){
         super(400, message);
     }
 }
 
-export class UnauthorizedError extends ApiError {
+class UnauthorizedError extends ApiError {
     constructor(message = 'Unauthorized'){
         super(401, message);
     }
 }
-export class NotFoundError extends ApiError {
+
+class NotFoundError extends ApiError {
     constructor(message = 'Not Found') {
         super(404, message);
     }
 }
 
-export class ForbiddenError extends ApiError {
+class ForbiddenError extends ApiError {
     constructor(message = 'Forbidden') {
         super(403, message);
     }
 }
 
-export class ConflictError extends ApiError {
+class ConflictError extends ApiError {
     constructor(message = 'Conflict') {
         super(409, message);
     }
 }
 
+class ServiceUnavailableError extends ApiError {
+    constructor(message = 'Service unavailable') { super(503, message); }
+}
+
+export {
+    BadRequestError,
+    UnauthorizedError,
+    NotFoundError,
+    ForbiddenError,
+    ConflictError,
+    ServiceUnavailableError,
+};
 export default ApiError;

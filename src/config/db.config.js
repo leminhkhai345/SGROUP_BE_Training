@@ -9,7 +9,7 @@ const pool = new Pool({
   database: config.db.database,
 });
 
-export const connectDB = async () => {
+const connectDB = async () => {
   try {
     const client = await pool.connect();
     console.log("Connected to PostgreSQL database successfully!");
@@ -20,5 +20,7 @@ export const connectDB = async () => {
   }
 };
 
-export const query = (text, params) => pool.query(text, params);
+const query = (text, params) => pool.query(text, params);
+
+export { connectDB, query };
 export default pool;

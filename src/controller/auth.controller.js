@@ -3,15 +3,21 @@ import { sendSuccess } from "../utils/responseHelper.js";
 import catchAsync from "../utils/catchAsync.js";
 
 const register = catchAsync(async (req, res) => {
-  const {name, email, password} = req.body;
-  const user = await authService.register({name, email, password});
-  return sendSuccess(res, 200, "Users retrieved successfully", user);
+  const registerRequest = req.body;
+  const user = await authService.register(registerRequest);
+  return sendSuccess(res, 201, "Registered successfully", user);
 });
 
 const login = catchAsync(async (req, res) => {
-  const { email, password} = req.body;
-  const accessToken = await authService.login({email, password});
-  return sendSuccess(res, 200, "Users retrieved successfully", accessToken);
+  const loginRequest = req.body;
+  const tokens = await authService.login(loginRequest);
+  return sendSuccess(res, 200, "Logged in successfully", tokens);
 });
 
-export {register, login};
+const refresh = catchAsync(async (req, res) => {
+  const refreshRequest = req.body;
+  const tokens = await authService.refresh(refreshRequest);
+  return sendSuccess(res, 200, "Token refreshed successfully", tokens);
+});
+
+export { register, login, refresh };

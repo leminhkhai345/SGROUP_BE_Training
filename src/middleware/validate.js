@@ -1,9 +1,8 @@
 import { validationResult, body } from 'express-validator';
 import { BadRequestError } from '../core/error.response.js';
 
-export const validate = (rules) => {
+const validate = (rules) => {
     return async (req, res, next) => {
-        // Chạy tuần tự từng rule
         for (const rule of rules) {
             await rule.run(req);
         }
@@ -13,61 +12,56 @@ export const validate = (rules) => {
             return next();
         }
 
-        // Gộp tất cả lỗi thành mảng { field, message }
         const formattedErrors = errors.array().map((err) => ({
             field: err.path,
             message: err.msg,
         }));
 
-        // Ném BadRequestError kèm danh sách lỗi chi tiết
         const error = new BadRequestError('Validation failed');
         error.errors = formattedErrors;
         return next(error);
     };
 };
 
-export const registerRules = [
+const registerRules = [
     body('name')
+        .isString().withMessage('Name must be a string')
         .trim()
         .notEmpty().withMessage('Name is required')
         .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
 
     body('email')
+        .isString().withMessage('Email must be a string')
         .trim()
         .notEmpty().withMessage('Email is required')
         .isEmail().withMessage('Email is not valid')
-        .normalizeEmail(),
+        .toLowerCase(),
 
     body('password')
-        .trim()
-        .notEmpty('password is required')
-        .isLength({ min: 6, max: 15 }).withMessage('password must be at least 6 charactor'),
+        .isString().withMessage('Password must be a string')
+        .notEmpty().withMessage('Password is required')
+        .isLength({ min: 6 }).withMessage('Password must contain at least 6 characters')
+        .custom((value) => Buffer.byteLength(value, 'utf8') <= 72).withMessage('Password must not exceed 72 UTF-8 bytes'),
 ];
 
-export const updateUserRules = [
-    body('name')
-        .trim()
-        .notEmpty().withMessage('Name is required')
-        .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
-
-    body('email')
-        .trim()
-        .notEmpty().withMessage('Email is required')
-        .isEmail().withMessage('Email is not valid')
-        .normalizeEmail(),
-
+const updateUserRules = [
+    body('name').optional().isString().trim().isLength({ min: 2, max: 50 }),
+    body('email').optional().isString().trim().isEmail().toLowerCase(),
+    body('phone').optional().isString().trim().notEmpty(),
+    body('dob').optional().isISO8601(),
 ];
 
-
-
-export const loginRules = [
+const loginRules = [
   body("email")
+    .isString().withMessage("Email must be a string")
     .trim()
     .notEmpty().withMessage("Email must be not empty")
     .isEmail().withMessage("Email is invalid")
-    .normalizeEmail(),
+    .toLowerCase(),
 
   body("password")
-    .trim()
+    .isString().withMessage("Password must be a string")
     .notEmpty().withMessage("password is required"),
 ];
+
+export { validate, registerRules, updateUserRules, loginRules };

@@ -1,9 +1,30 @@
 import { Router } from "express";
-import userRouter from "./users.route.js";
-import authRouter from "./auth.route.js";
+import users from "./users.route.js";
+import auth from "./auth.route.js";
+import upload from "./upload.route.js";
+import classes from "./classes.route.js";
+import class_members from "./class_members.route.js";
+import lessons from "./lessons.route.js";
+import assignments from "./assignments.route.js";
+import submissions from "./submissions.route.js";
+import lesson_progress from "./lesson_progress.route.js";
+import roles from "./roles.route.js";
+import permissions from "./permissions.route.js";
+import user_roles from "./user_roles.route.js";
+import role_permissions from "./role_permissions.route.js";
 
-const router = new Router();
-router.use("/users", userRouter);
-router.use("/auth", authRouter);
-
+const router = Router();
+router.use("/auth", auth);
+router.use("/users", users);
+router.use("/upload", upload);
+router.use("/classes", classes);
+router.use("/class-members", class_members);
+router.use("/lessons", lessons);
+router.use("/assignments", assignments);
+router.use("/submissions", submissions);
+router.use("/lesson-progress", lesson_progress);
+router.use("/roles", roles);
+router.use("/permissions", permissions);
+router.use("/user-roles", user_roles);
+router.use("/role-permissions", role_permissions);
 export default router;
