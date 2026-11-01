@@ -1,10 +1,12 @@
-import { Router } from "express";   
-import * as authController from "../controller/auth.controller.js";
+import { Router } from "express";
+import * as controller from "../controller/auth.controller.js";
 import { loginRules, registerRules, validate } from "../middleware/validate.js";
 
-const router = new Router();
+import { createAuthLimiter } from "../middleware/rateLimit.middleware.js";
 
-router.post("/register", validate(registerRules), authController.register);
-router.post("/login", validate(loginRules), authController.login)
-
+const router = Router();
+router.use(createAuthLimiter());
+router.post("/register", validate(registerRules), controller.register);
+router.post("/login", validate(loginRules), controller.login);
+router.post("/refresh", controller.refresh);
 export default router;

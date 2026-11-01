@@ -1,4 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
+import "./env.config.js";
 
 const r2Client = new S3Client({
     region: "auto",
