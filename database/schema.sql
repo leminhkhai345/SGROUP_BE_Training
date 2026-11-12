@@ -1,7 +1,7 @@
 -- Schema for a NEW training database. CREATE IF NOT EXISTS does not migrate existing tables.
 BEGIN;
 CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     email TEXT NOT NULL,
     password_hash TEXT NOT NULL,
@@ -15,9 +15,17 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique ON users (LOWER(email));
 
-CREATE TABLE IF NOT EXISTS roles (
-    id BIGSERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code TEXT NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT NOT NULL UNIQUE,
+    CONSTRAINT roles_code_allowed CHECK (code IN ('ADMIN', 'MEMBER')),
     name TEXT NOT NULL,
     description TEXT,
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
@@ -25,45 +33,38 @@ CREATE TABLE IF NOT EXISTS roles (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE TABLE IF NOT EXISTS permissions (
-    id BIGSERIAL PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE,
-    description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    assigned_by BIGINT REFERENCES users(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    assigned_by UUID REFERENCES users(id),
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ,
     PRIMARY KEY (user_id, role_id),
     CHECK (expires_at IS NULL OR expires_at > assigned_at)
 );
 CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    permission_id BIGINT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
     granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (role_id, permission_id)
 );
 
 CREATE TABLE IF NOT EXISTS classes (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
     start_date DATE,
     end_date DATE,
-    mentor_id BIGINT NOT NULL REFERENCES users(id),
+    mentor_id UUID REFERENCES users(id),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date)
 );
 CREATE TABLE IF NOT EXISTS class_members (
-    id BIGSERIAL PRIMARY KEY,
-    class_id BIGINT NOT NULL REFERENCES classes(id),
-    member_id BIGINT NOT NULL REFERENCES users(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    class_id UUID NOT NULL REFERENCES classes(id),
+    member_id UUID NOT NULL REFERENCES users(id),
     join_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -72,49 +73,49 @@ CREATE TABLE IF NOT EXISTS class_members (
 CREATE UNIQUE INDEX IF NOT EXISTS class_members_active_unique ON class_members (class_id, member_id) WHERE is_deleted = FALSE;
 
 CREATE TABLE IF NOT EXISTS lessons (
-    id BIGSERIAL PRIMARY KEY,
-    class_id BIGINT NOT NULL REFERENCES classes(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    class_id UUID NOT NULL REFERENCES classes(id),
     title TEXT NOT NULL,
     content TEXT,
-    created_by BIGINT NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES users(id),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS assignments (
-    id BIGSERIAL PRIMARY KEY,
-    class_id BIGINT NOT NULL REFERENCES classes(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    class_id UUID NOT NULL REFERENCES classes(id),
     title TEXT NOT NULL,
     description TEXT,
     deadline TIMESTAMPTZ,
     maximum_score NUMERIC NOT NULL CHECK (maximum_score > 0),
-    created_by BIGINT NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES users(id),
     image_url TEXT,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS submissions (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     version BIGINT NOT NULL DEFAULT 1 CHECK (version > 0),
-    assignment_id BIGINT NOT NULL REFERENCES assignments(id),
-    member_id BIGINT NOT NULL REFERENCES users(id),
+    assignment_id UUID NOT NULL REFERENCES assignments(id),
+    member_id UUID NOT NULL REFERENCES users(id),
     content TEXT,
     repository_url TEXT,
     submitted_at TIMESTAMPTZ,
     score NUMERIC CHECK (score >= 0),
     feedback TEXT,
     reviewed_at TIMESTAMPTZ,
-    reviewed_by BIGINT REFERENCES users(id),
+    reviewed_by UUID REFERENCES users(id),
     status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED', 'REVIEWED')),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS lesson_progress (
-    id BIGSERIAL PRIMARY KEY,
-    lesson_id BIGINT NOT NULL REFERENCES lessons(id),
-    member_id BIGINT NOT NULL REFERENCES users(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lesson_id UUID NOT NULL REFERENCES lessons(id),
+    member_id UUID NOT NULL REFERENCES users(id),
     completed_at TIMESTAMPTZ,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

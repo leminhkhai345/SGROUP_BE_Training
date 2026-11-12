@@ -57,16 +57,14 @@ const create = async ({ lessonId, memberId, completedAt }) => {
   return result.rows[0];
 };
 
-const update = async ({ id, lessonId, memberId, completedAt }) => {
+const update = async ({ id, completedAt }) => {
   const result = await pool.query(
     `UPDATE lesson_progress
-     SET lesson_id = COALESCE($1, lesson_id),
-         member_id = COALESCE($2, member_id),
-         completed_at = COALESCE($3, completed_at),
+     SET completed_at = $1,
          updated_at = NOW()
-     WHERE id = $4 AND is_deleted = FALSE
+     WHERE id = $2 AND is_deleted = FALSE
      RETURNING *`,
-    [lessonId ?? null, memberId ?? null, completedAt ?? null, id]
+    [completedAt ?? null, id]
   );
   return result.rows[0] || null;
 };

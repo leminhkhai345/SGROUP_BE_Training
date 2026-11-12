@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
 import { config } from "../config/env.config.js";
+import { isUuid } from "./idHelper.js";
 
 const verify = (token, secret, type) => {
   const payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
-  if (!payload || typeof payload !== "object" || payload.tokenType !== type || !/^[1-9]\d*$/.test(String(payload.id))) {
+  if (!payload || typeof payload !== "object" || payload.tokenType !== type || !isUuid(payload.id)) {
     throw new jwt.JsonWebTokenError("Invalid token payload");
   }
   return payload;

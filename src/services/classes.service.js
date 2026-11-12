@@ -2,6 +2,7 @@ import { findPage } from "../repository/list.repository.js";
 import { BadRequestError, ForbiddenError } from "../core/error.response.js";
 import * as repository from "../repository/classes.repository.js";
 import * as users from "../repository/users.repository.js";
+import * as classMembers from "../repository/class_members.repository.js";
 import { requirePermission, requireClassAccess, isAdmin, sameId, getUserAccess } from "./authorization.service.js";
 import { serviceAction, requireRecord, validateId, validateBody, textField, dateField, pick } from "../utils/serviceHelper.js";
 
@@ -16,13 +17,16 @@ const prepare = async (body, actor, existing) => {
   const start = data.startDate ?? existing?.start_date;
   const end = data.endDate ?? existing?.end_date;
   if (start && end && new Date(start) > new Date(end)) throw new BadRequestError("endDate must be on or after startDate");
-  if (!existing && data.mentorId === undefined) data.mentorId = actor.id;
+  if (!existing && data.mentorId !== undefined) throw new BadRequestError("Create the class first, add a member, then assign that member as mentor");
   if (data.mentorId !== undefined) {
-    validateId(data.mentorId, "mentorId");
-    if (!isAdmin(actor) && !sameId(data.mentorId, actor.id)) throw new ForbiddenError("Only administrators can assign another mentor");
-    const mentor = requireRecord(await users.findById(data.mentorId), "Mentor");
-    const access = await getUserAccess(mentor.id);
-    if (!access.roles.some((role) => ["MENTOR", "ADMIN"].includes(role))) throw new BadRequestError("mentorId must belong to a mentor or administrator");
+    if (!isAdmin(actor)) throw new ForbiddenError("Only administrators can assign a class mentor");
+    if (data.mentorId !== null) {
+      validateId(data.mentorId, "mentorId");
+      const mentor = requireRecord(await users.findById(data.mentorId), "Class member");
+      const access = await getUserAccess(mentor.id);
+      if (!access.roles.includes("MEMBER")) throw new BadRequestError("Class mentor must have the MEMBER role");
+      if (!await classMembers.findByClassAndMember(existing.id, mentor.id)) throw new BadRequestError("Class mentor must be an active member of this class");
+    }
   }
   return data;
 };
@@ -39,11 +43,13 @@ const getClassById = serviceAction(async (id, actor) => {
 
 const createClass = serviceAction(async (body, actor) => {
   requirePermission(actor, "classes:write");
+  if (!isAdmin(actor)) throw new ForbiddenError("Only administrators can create classes");
   return repository.create(await prepare(body, actor));
 });
 
 const updateClass = serviceAction(async (id, body, actor) => {
   requirePermission(actor, "classes:write");
+  if (body.mentorId !== undefined && !isAdmin(actor)) throw new ForbiddenError("Only administrators can assign a class mentor");
   const existing = await requireClassAccess(actor, id, true);
   return requireRecord(await repository.update({ ...await prepare(body, actor, existing), id }), "Class");
 });

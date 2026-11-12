@@ -3,12 +3,12 @@ import { BadRequestError, ConflictError, ForbiddenError } from "../core/error.re
 import * as repository from "../repository/submissions.repository.js";
 import * as assignments from "../repository/assignments.repository.js";
 import { requirePermission, requireClassAccess, isAdmin, sameId, hasPermission } from "./authorization.service.js";
-import { serviceAction, requireRecord, validateId, validateBody, pick, numberField } from "../utils/serviceHelper.js";
+import { serviceAction, requireRecord, validateId, validatePositiveInteger, validateBody, pick, numberField } from "../utils/serviceHelper.js";
 import { transaction } from "../utils/transaction.js";
 
 const expectedVersion = (body, record) => {
   const value = body.version ?? record.version;
-  validateId(value, "version");
+  validatePositiveInteger(value, "version");
   if (!sameId(value, record.version)) throw new ConflictError("Submission changed; reload before retrying");
   return value;
 };
@@ -19,7 +19,7 @@ const load = async (id) => {
   const assignment = requireRecord(await assignments.findById(record.assignment_id), "Assignment");
   return { record, assignment };
 };
-const canReview = (actor, classroom) => isAdmin(actor) || (hasPermission(actor, "submissions:review") && sameId(classroom.mentor_id, actor.id));
+const canReview = (actor, classroom) => hasPermission(actor, "submissions:review") && sameId(classroom.mentor_id, actor.id);
 const requireRead = async (actor, record, assignment) => {
   const classroom = await requireClassAccess(actor, assignment.class_id);
   if (!sameId(record.member_id, actor.id) && !canReview(actor, classroom)) throw new ForbiddenError("You cannot access another member's submission");
@@ -95,7 +95,7 @@ const reviewSubmission = serviceAction(async (id, body, actor) => {
   if (record.status !== "SUBMITTED") throw new BadRequestError("Only submitted work can be reviewed");
   numberField(body.score, "score");
   if (body.feedback !== undefined && typeof body.feedback !== "string") throw new BadRequestError("feedback must be a string");
-  validateId(body.version, "version");
+  validatePositiveInteger(body.version, "version");
   const version = expectedVersion(body, record);
   return transaction(async (db) => {
     const lockedAssignment = requireRecord(await assignments.findByIdForUpdate(assignment.id, db), "Assignment");

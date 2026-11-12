@@ -14,6 +14,8 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seed-rbac.sql:/docker-entrypoint-initdb.d/02-seed-rbac.sql:ro
       - ./database/migrations/001_submission_version.sql:/docker-entrypoint-initdb.d/03-migration.sql:ro
+      - ./database/migrations/002_uuid_identifiers.sql:/docker-entrypoint-initdb.d/04-uuid-identifiers.sql:ro
+      - ./database/migrations/003_submission_review_status.sql:/docker-entrypoint-initdb.d/05-submission-review-status.sql:ro
 
 volumes:
   postgres_data:

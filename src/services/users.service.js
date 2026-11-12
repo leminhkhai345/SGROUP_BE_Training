@@ -27,7 +27,7 @@ const updateUser = serviceAction(async (id, body, actor) => {
   validateId(id);
   requireSelfOrPermission(actor, id, "users:write");
   validateBody(body);
-  if (["role", "roles", "permissions", "password", "password_hash"].some((field) => body[field] !== undefined)) throw new ForbiddenError("Role and credentials cannot be changed through profile updates");
+  if (["role", "roles", "permissions", "password", "password_hash"].some((field) => body[field] !== undefined)) throw new ForbiddenError("Permissions and credentials cannot be changed through profile updates");
   requireRecord(await repository.findById(id), "User");
   const data = pick(body, ["name", "email", "phone", "dob"]);
   if (!Object.keys(data).length) throw new BadRequestError("No user fields supplied");
@@ -56,7 +56,7 @@ const deleteUser = serviceAction(async (id, actor) => {
 const getMyProfile = serviceAction(async (actor) => {
   requireActor(actor);
   const user = requireRecord(await repository.findById(actor.id), "User");
-  return { ...user, roles: actor.roles, permissions: actor.permissions, avt_url: await uploadService.getFileUrl(user.avt_url) };
+  return { ...user, permissions: actor.permissions, avt_url: await uploadService.getFileUrl(user.avt_url) };
 });
 
 const updateAvatar = serviceAction(async (actor, file) => {

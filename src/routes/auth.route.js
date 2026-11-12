@@ -9,4 +9,5 @@ router.use(createAuthLimiter());
 router.post("/register", validate(registerRules), controller.register);
 router.post("/login", validate(loginRules), controller.login);
 router.post("/refresh", controller.refresh);
+router.post("/logout", controller.logout);
 export default router;

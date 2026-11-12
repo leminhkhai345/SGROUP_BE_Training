@@ -4,6 +4,7 @@ import { ForbiddenError } from "../core/error.response.js";
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
+import { UUID_PATTERN } from "../utils/idHelper.js";
 import r2Client from "../config/r2.config.js";
 import ApiError, { BadRequestError, ServiceUnavailableError } from "../core/error.response.js";
 
@@ -56,11 +57,12 @@ const uploadMultiFiles = storageAction(async (files, ownerId) => {
   return results.map((result) => result.value);
 });
 
+const fileKeyPattern = new RegExp(`^uploads/(?:${UUID_PATTERN}/)?${UUID_PATTERN}\\.[a-z0-9]{1,10}$`, "i");
 const refreshFileUrl = async (body, actor) => {
   requirePermission(actor, "uploads:write");
   validateBody(body);
   const key = body.key;
-  if (typeof key !== "string" || !/^uploads\/(?:[1-9]\d*\/)?[a-f0-9-]{36}\.[a-z0-9]{1,10}$/i.test(key)) throw new BadRequestError("Invalid file key");
+  if (typeof key !== "string" || !fileKeyPattern.test(key)) throw new BadRequestError("Invalid file key");
   if (!isAdmin(actor) && !key.startsWith(`uploads/${actor.id}/`) && key !== actor.avt_url) throw new ForbiddenError("You cannot access this file");
   return { key, url: await getFileUrl(key), expiresIn: 3600 };
 };
