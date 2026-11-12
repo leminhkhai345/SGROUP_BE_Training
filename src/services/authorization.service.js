@@ -21,7 +21,6 @@ const PERMISSION_ALIASES = {
   "submissions:review": ["submissions:review", "submission.grade.assigned"],
   "progress:read": ["progress:read", "lesson_progress.read.assigned"],
   "progress:write": ["progress:write", "lesson_progress.update.self"],
-  "rbac:manage": ["rbac:manage", "rbac.manage"],
 };
 
 const getUserAccess = serviceAction(async (userId) => {
@@ -40,7 +39,7 @@ const getUserAccess = serviceAction(async (userId) => {
   for (const [apiPermission, codes] of Object.entries(PERMISSION_ALIASES)) {
     if (codes.some((code) => grantedCodes.includes(code))) permissions.add(apiPermission);
   }
-  if ((await classes.findByMentorId(user.id)).length > 0) {
+  if (roles.has("MEMBER") && (await classes.findByMentorId(user.id)).length > 0) {
     for (const permission of ["classes:read", "classes:write", "classes:members", "lessons:read", "lessons:write", "assignments:read", "assignments:write", "submissions:read", "submissions:review", "progress:read"]) {
       permissions.add(permission);
     }
