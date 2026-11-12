@@ -26,12 +26,30 @@ const findByEmail = async (email) => {
 };
 
 const create = async({name, email, password_hash, role, phone, dob, avt_url}) => {
-    const result = await pool.query(
-      `INSERT INTO users(name, email, password_hash, role, phone, dob, avt_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, role`,
-      [name, email, password_hash, role, phone ?? null, dob ?? null, avt_url ?? null]
-    );
-    return result.rows[0];
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        `INSERT INTO users(name, email, password_hash, role, phone, dob, avt_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, role`,
+        [name, email, password_hash, role, phone ?? null, dob ?? null, avt_url ?? null]
+      );
+      if (role) {
+        await client.query(
+          `INSERT INTO user_roles (user_id, role_id)
+           SELECT $1, id FROM roles WHERE code = $2 AND is_active = TRUE
+           ON CONFLICT (user_id, role_id) DO NOTHING`,
+          [result.rows[0].id, role]
+        );
+      }
+      await client.query("COMMIT");
+      return result.rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
 }
 
 const update = async (id, { name, email, phone, dob}) => {

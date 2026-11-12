@@ -51,11 +51,11 @@ const update = async ({ id, name, description, startDate, endDate, mentorId }) =
          description = COALESCE($2, description),
          start_date = COALESCE($3, start_date),
          end_date = COALESCE($4, end_date),
-         mentor_id = COALESCE($5, mentor_id),
+         mentor_id = CASE WHEN $6 THEN $5 ELSE mentor_id END,
          updated_at = NOW()
-     WHERE id = $6 AND is_deleted = FALSE
+     WHERE id = $7 AND is_deleted = FALSE
      RETURNING id, name, description, start_date, end_date, mentor_id, created_at, updated_at`,
-    [name ?? null, description ?? null, startDate ?? null, endDate ?? null, mentorId ?? null, id]
+    [name ?? null, description ?? null, startDate ?? null, endDate ?? null, mentorId ?? null, mentorId !== undefined, id]
   );
   return result.rows[0] || null;
 };

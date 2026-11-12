@@ -1,4 +1,5 @@
 import ApiError, { BadRequestError, ConflictError, NotFoundError } from "../core/error.response.js";
+import { isUuid } from "./idHelper.js";
 
 // Keep business exceptions intact; translate predictable PostgreSQL failures.
 const serviceAction = (action) => async (...args) => {
@@ -21,6 +22,13 @@ const requireRecord = (record, label = "Record") => {
 };
 
 const validateId = (value, field = "id") => {
+  if (!isUuid(value)) {
+    throw new BadRequestError(`${field} must be a valid UUID`);
+  }
+  return value;
+};
+
+const validatePositiveInteger = (value, field) => {
   if (!["string", "number"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value))) {
     throw new BadRequestError(`${field} must be a positive integer`);
   }
@@ -79,6 +87,7 @@ export {
   serviceAction,
   requireRecord,
   validateId,
+  validatePositiveInteger,
   validateBody,
   textField,
   dateField,

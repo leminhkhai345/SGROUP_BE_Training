@@ -18,14 +18,6 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-const authorizeRoles = (...roles) => (req, res, next) => {
-  try {
-    requireActor(req.user);
-    if (!roles.some((role) => req.user.roles.includes(role))) throw new ForbiddenError("Insufficient role");
-    next();
-  } catch (error) { next(error); }
-};
-
 const authorizePermissions = (...permissions) => (req, res, next) => {
   try {
     requireActor(req.user);
@@ -34,4 +26,4 @@ const authorizePermissions = (...permissions) => (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-export { authenticate, authorizeRoles, authorizePermissions };
+export { authenticate, authorizePermissions };

@@ -1,115 +1,57 @@
 import * as repository from "../repository/lesson_progress.repository.js";
-import * as lessonrepository from "../repository/lessons.repository.js";
-import {
-  requirePermission,
-  requireClassAccess,
-} from "./authorization.service.js";
-import {
-  serviceAction,
-  requireRecord,
-  validateId,
-  validateBody,
-  textField,
-  dateField,
-  pick,
-} from "../utils/serviceHelper.js";
-import { canReadClass, isAdmin, sameId } from "./authorization.service.js";
-import { BadRequestError, ForbiddenError } from "../core/error.response.js";
-const prepare = async (body, actor, existing) => {
+import * as lessons from "../repository/lessons.repository.js";
+import { findPage } from "../repository/list.repository.js";
+import { requirePermission, requireClassAccess, isAdmin, sameId, hasPermission } from "./authorization.service.js";
+import { serviceAction, requireRecord, validateId, validateBody, dateField } from "../utils/serviceHelper.js";
+import { BadRequestError, ConflictError, ForbiddenError } from "../core/error.response.js";
+
+const lessonClass = async (lessonId, actor) => {
+  validateId(lessonId, "lessonId");
+  const lesson = requireRecord(await lessons.findById(lessonId), "Lesson");
+  return requireClassAccess(actor, lesson.class_id);
+};
+const load = async (id, actor, write = false) => {
+  validateId(id, "lessonProgressId");
+  const record = requireRecord(await repository.findById(id), "Lesson progress");
+  const classroom = await lessonClass(record.lesson_id, actor);
+  const allowed = sameId(record.member_id, actor.id) || isAdmin(actor) || (!write && hasPermission(actor, "progress:read") && sameId(classroom.mentor_id, actor.id));
+  if (!allowed) throw new ForbiddenError("You cannot access another member's progress");
+  return record;
+};
+
+const getAllLessonProgress = serviceAction(async (options = {}, actor) => {
+  requirePermission(actor, "progress:read");
+  if (options.lessonId !== undefined) await lessonClass(options.lessonId, actor);
+  return findPage("lesson_progress", options, actor);
+});
+const getLessonProgressById = serviceAction(async (id, actor) => {
+  requirePermission(actor, "progress:read");
+  return load(id, actor);
+});
+const createLessonProgress = serviceAction(async (body, actor) => {
+  requirePermission(actor, "progress:write");
   validateBody(body);
-  const data = pick(body, ["lessonId", "memberId", "completedAt"]);
-  if (!existing && !Object.keys(data).length) {
-    throw new BadRequestError("No lesson progress fields supplied");
-  }
-  if (!existing && !data.lessonId) {
-    throw new BadRequestError("lessonId is required");
-  }
-  if (data.lessonId !== undefined) {
-    validateId(data.lessonId, "lessonId");
-  }
-  if (data.memberId !== undefined) {
-    validateId(data.memberId, "memberId");
-  } else if (!existing) {
-    data.memberId = actor.id;
-  }
-  if (data.completedAt !== undefined && data.completedAt !== null) {
-    dateField(data.completedAt, "completedAt");
-  }
-  return data;
-};
-const getAllLessonProgress = async (options = {}, actor) => {
-  if (options.lessonId) {
-    validateId(options.lessonId, "lessonId");
-    const lesson = requireRecord(
-      await lessonRepository.findById(options.lessonId),
-      "Lesson",
-    );
-    await requireClassAccess(actor, lesson.class_id, false);
-  }
-  if (!isAdmin(actor)) {
-    options.memberId = actor.id;
-  }
+  const memberId = body.memberId ?? actor.id;
+  validateId(memberId, "memberId");
+  if (!isAdmin(actor) && !sameId(memberId, actor.id)) throw new ForbiddenError("You can only create your own progress");
+  await lessonClass(body.lessonId, actor);
+  if (body.completedAt !== null) dateField(body.completedAt, "completedAt");
+  if (await repository.findByLessonAndMember(body.lessonId, memberId)) throw new ConflictError("Lesson progress already exists");
+  return repository.create({ lessonId: body.lessonId, memberId, completedAt: body.completedAt });
+});
+const updateLessonProgress = serviceAction(async (id, body, actor) => {
+  requirePermission(actor, "progress:write");
+  validateBody(body);
+  await load(id, actor, true);
+  if (body.lessonId !== undefined || body.memberId !== undefined) throw new BadRequestError("Progress identity cannot be changed");
+  if (body.completedAt === undefined) throw new BadRequestError("completedAt is required");
+  if (body.completedAt !== null) dateField(body.completedAt, "completedAt");
+  return requireRecord(await repository.update({ id, completedAt: body.completedAt }), "Lesson progress");
+});
+const deleteLessonProgress = serviceAction(async (id, actor) => {
+  requirePermission(actor, "progress:write");
+  await load(id, actor, true);
+  return requireRecord(await repository.deleteById(id), "Lesson progress");
+});
 
-  return await repository.findAll(options);
-};
-
-const getLessonProgressById = async (id, actor) => {
-  validateId(id, "lessonProgressId");
-  const lessonProgress = requireRecord(
-    await repository.findById(id),
-    "LessonProgress",
-  );
-  const lesson = requireRecord(
-    await lessonrepository.findById(lessonProgress.lesson_id),
-    "Lesson",
-  );
-  await requireClassAccess(actor, lesson.class_id, false);
-  return lessonProgress;
-};
-
-const createLessonProgress = async (body, actor) => {
-  const data = await prepare(body, actor);
-  const lesson = requireRecord(
-    await lessonrepository.findById(data.lessonId),
-    "Lesson",
-  );
-  await requireClassAccess(actor, lesson.class_id, false);
-  return await repository.create(data);
-};
-
-const updateLessonProgress = async (id, body, actor) => {
-  validateId(id, "lessonProgressId");
-  const existing = requireRecord(
-    await repository.findById(id),
-    "LessonProgress",
-  );
-  const data = await prepare(body, actor, existing);
-  const lesson = requireRecord(
-    await lessonrepository.findById(existing.lesson_id),
-    "Lesson",
-  );
-  await requireClassAccess(actor, lesson.class_id, false);
-  return await repository.update({ ...data, id });
-};
-
-const deleteLessonProgress = async (id, actor) => {
-  validateId(id, "lessonProgressId");
-  const existing = requireRecord(
-    await repository.findById(id),
-    "LessonProgress",
-  );
-  const lesson = requireRecord(
-    await lessonrepository.findById(existing.lesson_id),
-    "Lesson",
-  );
-  await requireClassAccess(actor, lesson.class_id, false);
-  return await repository.delete(id);
-};
-
-export {
-  getAllLessonProgress,
-  getLessonProgressById,
-  createLessonProgress,
-  updateLessonProgress,
-  deleteLessonProgress,
-};
+export { getAllLessonProgress, getLessonProgressById, createLessonProgress, updateLessonProgress, deleteLessonProgress };
