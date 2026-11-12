@@ -3,6 +3,11 @@ services:
     image: postgres:16-alpine
     container_name: basic_be_db
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d basic_be_training"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     environment:
       POSTGRES_DB: basic_be_training
       POSTGRES_USER: postgres
@@ -16,6 +21,9 @@ services:
       - ./database/migrations/001_submission_version.sql:/docker-entrypoint-initdb.d/03-migration.sql:ro
       - ./database/migrations/002_uuid_identifiers.sql:/docker-entrypoint-initdb.d/04-uuid-identifiers.sql:ro
       - ./database/migrations/003_submission_review_status.sql:/docker-entrypoint-initdb.d/05-submission-review-status.sql:ro
+      - ./database/migrations/004_database_authorization.sql:/docker-entrypoint-initdb.d/06-database-authorization.sql:ro
+      - ./database/migrations/006_admin_member_class_mentor.sql:/docker-entrypoint-initdb.d/07-admin-member-class-mentor.sql:ro
+      - ./database/migrations/007_cleanup_unused_permissions.sql:/docker-entrypoint-initdb.d/08-cleanup-unused-permissions.sql:ro
 
 volumes:
   postgres_data:

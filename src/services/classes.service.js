@@ -49,6 +49,7 @@ const createClass = serviceAction(async (body, actor) => {
 
 const updateClass = serviceAction(async (id, body, actor) => {
   requirePermission(actor, "classes:write");
+  validateBody(body);
   if (body.mentorId !== undefined && !isAdmin(actor)) throw new ForbiddenError("Only administrators can assign a class mentor");
   const existing = await requireClassAccess(actor, id, true);
   return requireRecord(await repository.update({ ...await prepare(body, actor, existing), id }), "Class");

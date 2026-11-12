@@ -2,6 +2,7 @@ import * as authService from "../services/auth.service.js";
 import { sendSuccess } from "../utils/responseHelper.js";
 import catchAsync from "../utils/catchAsync.js";
 import { config } from "../config/env.config.js";
+import { UnauthorizedError } from "../core/error.response.js";
 
 // Setting and clearing must use the same cookie path and security flags.
 const refreshCookieOptions = () => ({
@@ -15,7 +16,12 @@ const setRefreshCookie = (res, refreshToken) => res.cookie("refreshToken", refre
 
 const readRefreshCookie = (req) => {
   const cookie = req.headers.cookie?.split(";").map((part) => part.trim()).find((part) => part.startsWith("refreshToken="));
-  return cookie ? decodeURIComponent(cookie.slice("refreshToken=".length)) : undefined;
+  if (!cookie) return undefined;
+  try {
+    return decodeURIComponent(cookie.slice("refreshToken=".length));
+  } catch {
+    throw new UnauthorizedError("Invalid refresh token cookie");
+  }
 };
 
 const register = catchAsync(async (req, res) => {

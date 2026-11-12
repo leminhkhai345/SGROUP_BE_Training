@@ -22,7 +22,7 @@ const load = async (id) => {
 const canReview = (actor, classroom) => hasPermission(actor, "submissions:review") && sameId(classroom.mentor_id, actor.id);
 const requireRead = async (actor, record, assignment) => {
   const classroom = await requireClassAccess(actor, assignment.class_id);
-  if (!sameId(record.member_id, actor.id) && !canReview(actor, classroom)) throw new ForbiddenError("You cannot access another member's submission");
+  if (!isAdmin(actor) && !sameId(record.member_id, actor.id) && !canReview(actor, classroom)) throw new ForbiddenError("You cannot access another member's submission");
 };
 const memberData = (body, existing) => {
   for (const field of ["score", "feedback", "reviewedBy", "reviewedAt", "submittedAt"]) {

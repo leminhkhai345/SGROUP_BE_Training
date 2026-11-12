@@ -32,14 +32,15 @@ const findPage = async (resource, options = {}, actor) => {
   else if (definition.scope === "submission") joins = " JOIN assignments a ON a.id = r.assignment_id AND a.is_deleted = FALSE JOIN classes c ON c.id = a.class_id AND c.is_deleted = FALSE";
   else if (definition.scope === "progress") joins = " JOIN lessons l ON l.id = r.lesson_id AND l.is_deleted = FALSE JOIN classes c ON c.id = l.class_id AND c.is_deleted = FALSE";
 
-  if (definition.scope) {
+  // Administrators do not need an actor parameter in the SQL scope.
+  // Binding an unused $1 makes PostgreSQL reject the LIMIT/OFFSET query.
+  if (definition.scope && !isAdmin(actor)) {
     const user = bind(actor.id);
     const relation = `(${classroom}.mentor_id = ${user} OR EXISTS (SELECT 1 FROM class_members cm WHERE cm.class_id = ${classroom}.id AND cm.member_id = ${user} AND cm.is_deleted = FALSE))`;
-    const permission = definition.scope === "progress" ? "progress:read" : definition.scope === "submission" ? "submissions:read" : "classes:read";
-    where.push(hasPermission(actor, permission) && isAdmin(actor) ? "TRUE" : `(${relation})`);
+    where.push(relation);
     if (["submission", "progress"].includes(definition.scope)) {
       const mentorCanRead = hasPermission(actor, definition.scope === "progress" ? "progress:read" : "submissions:review");
-      where.push(isAdmin(actor) ? "TRUE" : mentorCanRead ? `(r.member_id = ${user} OR ${classroom}.mentor_id = ${user})` : `r.member_id = ${user}`);
+      where.push(mentorCanRead ? `(r.member_id = ${user} OR ${classroom}.mentor_id = ${user})` : `r.member_id = ${user}`);
     }
   }
   for (const [field, column] of Object.entries(definition.filters ?? {})) {

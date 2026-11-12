@@ -19,7 +19,6 @@ INSERT INTO permissions (code) VALUES
     ('submissions:review'),
     ('progress:read'),
     ('progress:write'),
-    ('rbac:manage'),
     ('uploads:write')
 ON CONFLICT (code) DO NOTHING;
 
@@ -30,7 +29,7 @@ WHERE (r.code = 'ADMIN' AND p.code IN (
   'users:read', 'users:write', 'classes:read', 'classes:write', 'classes:members',
   'lessons:read', 'lessons:write', 'assignments:read', 'assignments:write',
   'submissions:read', 'submissions:write', 'submissions:review',
-  'progress:read', 'progress:write', 'rbac:manage', 'uploads:write'
+  'progress:read', 'progress:write', 'uploads:write'
 )) OR (r.code = 'MEMBER' AND p.code IN (
   'classes:read', 'lessons:read', 'assignments:read', 'submissions:read',
   'submissions:write', 'progress:read', 'progress:write', 'uploads:write'
