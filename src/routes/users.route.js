@@ -11,6 +11,5 @@ router.get("/", authorizePermissions("users:read"), controller.getAllUsers);
 router.post("/avatar", authorizePermissions("uploads:write"), upload.single("file"), requireFile, controller.updateAvatar);
 router.get("/:id", controller.getUserById);
 router.put("/:id", validate(updateUserRules), controller.updateUser);
-router.patch("/:id", validate(updateUserRules), controller.updateUser);
 router.delete("/:id", authorizePermissions("users:write"), controller.deleteUser);
 export default router;

@@ -1,5 +1,6 @@
 import { validationResult, body } from 'express-validator';
 import { BadRequestError } from '../core/error.response.js';
+import { hasLetterAndDigit } from '../utils/passwordHelper.js';
 
 const validate = (rules) => {
     return async (req, res, next) => {
@@ -39,8 +40,11 @@ const registerRules = [
 
     body('password')
         .isString().withMessage('Password must be a string')
+        .bail()
         .notEmpty().withMessage('Password is required')
+        .bail()
         .isLength({ min: 6 }).withMessage('Password must contain at least 6 characters')
+        .custom(hasLetterAndDigit).withMessage('Password must contain at least one letter and one digit')
         .custom((value) => Buffer.byteLength(value, 'utf8') <= 72).withMessage('Password must not exceed 72 UTF-8 bytes'),
 ];
 

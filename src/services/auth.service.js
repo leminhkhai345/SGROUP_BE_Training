@@ -10,7 +10,7 @@ const credentials = (input, registration = false) => {
   const email = textField(input.email, "email", true).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestError("Invalid email");
   if (typeof input.password !== "string" || !input.password.length) throw new BadRequestError("Password is required");
-  if (Buffer.byteLength(input.password, "utf8") > 72 || (registration && input.password.length < 6)) {
+  if (Buffer.byteLength(input.password, "utf8") > 72 || (registration && [...input.password].length < 6)) {
     throw new BadRequestError("Password must contain at least 6 characters and at most 72 UTF-8 bytes");
   }
   return { email, password: input.password };
@@ -18,6 +18,7 @@ const credentials = (input, registration = false) => {
 
 const register = serviceAction(async (input) => {
   const { email, password } = credentials(input, true);
+  if (!passwords.hasLetterAndDigit(password)) throw new BadRequestError("Password must contain at least one letter and one digit");
   const name = textField(input.name, "name", true);
   if (name.length < 2 || name.length > 50) throw new BadRequestError("Name must contain 2 to 50 characters");
   if (await users.findByEmail(email)) throw new ConflictError("Email already exists");
