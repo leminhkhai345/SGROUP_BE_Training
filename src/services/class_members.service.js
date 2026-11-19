@@ -34,18 +34,6 @@ const createClassMember = serviceAction(async (body, actor) => {
   return repository.create({ classId: body.classId, memberId: body.memberId, joinAt: body.joinAt });
 });
 
-const updateClassMember = serviceAction(async (id, body, actor) => {
-  requirePermission(actor, "classes:members");
-  validateId(id);
-  validateBody(body);
-  const member = requireRecord(await repository.findById(id), "Class member");
-  await requireClassAccess(actor, member.class_id, true);
-  if (body.classId !== undefined || body.memberId !== undefined) throw new BadRequestError("Membership identity cannot be changed");
-  if (body.joinAt === undefined) throw new BadRequestError("joinAt is required");
-  dateField(body.joinAt, "joinAt");
-  return requireRecord(await repository.update({ id, joinAt: body.joinAt }), "Class member");
-});
-
 const deleteClassMember = serviceAction(async (id, actor) => {
   requirePermission(actor, "classes:members");
   validateId(id);
@@ -59,6 +47,5 @@ export {
   getAllClassMembers,
   getClassMemberById,
   createClassMember,
-  updateClassMember,
   deleteClassMember,
 };

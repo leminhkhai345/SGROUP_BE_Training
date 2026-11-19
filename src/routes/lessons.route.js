@@ -8,7 +8,6 @@ router.get("/", lessonController.getAllLessons);
 router.get("/:id", lessonController.getLessonById);
 router.post("/", lessonController.createLesson);
 router.put("/:id", lessonController.updateLesson);
-router.patch("/:id", lessonController.updateLesson);
 router.delete("/:id", lessonController.deleteLesson);
 
 export default router;

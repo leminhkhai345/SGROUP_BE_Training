@@ -8,8 +8,7 @@ router.get("/", submissionController.getAllSubmissions);
 router.get("/:id", submissionController.getSubmissionById);
 router.post("/", submissionController.createSubmission);
 router.put("/:id", submissionController.updateSubmission);
-router.patch("/:id", submissionController.updateSubmission);
 router.delete("/:id", submissionController.deleteSubmission);
-router.patch("/:id/review", submissionController.reviewSubmission);
+router.put("/:id/review", submissionController.reviewSubmission);
 
 export default router;

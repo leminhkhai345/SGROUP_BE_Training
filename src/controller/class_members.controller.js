@@ -19,17 +19,10 @@ const createClassMember = catchAsync(async (req, res) => {
   return sendSuccess(res, 201, "Created successfully", classMember);
 });
 
-const updateClassMember = catchAsync(async (req, res) => {
-  const classMemberId = req.params.id;
-  const updateRequest = req.body;
-  const classMember = await classMemberService.updateClassMember(classMemberId, updateRequest, req.user);
-  return sendSuccess(res, 200, "Updated successfully", classMember);
-});
-
 const deleteClassMember = catchAsync(async (req, res) => {
   const classMemberId = req.params.id;
   await classMemberService.deleteClassMember(classMemberId, req.user);
   return res.status(204).end();
 });
 
-export { getAllClassMembers, getClassMemberById, createClassMember, updateClassMember, deleteClassMember };
+export { getAllClassMembers, getClassMemberById, createClassMember, deleteClassMember };

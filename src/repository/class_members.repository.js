@@ -57,20 +57,6 @@ const create = async ({ classId, memberId, joinAt }) => {
   return result.rows[0];
 };
 
-const update = async ({ id, classId, memberId, joinAt }) => {
-  const result = await pool.query(
-    `UPDATE class_members
-     SET class_id = COALESCE($1, class_id),
-         member_id = COALESCE($2, member_id),
-         join_at = COALESCE($3, join_at),
-         updated_at = NOW()
-     WHERE id = $4 AND is_deleted = FALSE
-     RETURNING *`,
-    [classId ?? null, memberId ?? null, joinAt ?? null, id]
-  );
-  return result.rows[0] || null;
-};
-
 const deleteById = async (id) => {
   const result = await pool.query(
     `UPDATE class_members
@@ -82,4 +68,4 @@ const deleteById = async (id) => {
   return result.rows[0] || null;
 };
 
-export { findAll, findById, findByClassId, findByMemberId, findByClassAndMember, create, update, deleteById };
+export { findAll, findById, findByClassId, findByMemberId, findByClassAndMember, create, deleteById };
