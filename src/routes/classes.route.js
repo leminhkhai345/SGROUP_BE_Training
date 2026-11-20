@@ -7,7 +7,8 @@ router.use(authenticate);
 router.get("/", classController.getAllClasses);
 router.get("/:id", classController.getClassById);
 router.post("/", classController.createClass);
-router.put("/:id", classController.updateClass);
+router.put("/:id/set-mentor", classController.setClassMentor);
+router.put("/:id/unassign-mentor", classController.unassignClassMentor);
 router.delete("/:id", classController.deleteClass);
 
 export default router;
