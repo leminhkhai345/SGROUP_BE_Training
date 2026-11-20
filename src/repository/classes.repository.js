@@ -60,6 +60,17 @@ const update = async ({ id, name, description, startDate, endDate, mentorId }) =
   return result.rows[0] || null;
 };
 
+const unassignMentor = async (id, mentorId) => {
+  const result = await pool.query(
+    `UPDATE classes
+     SET mentor_id = NULL, updated_at = NOW()
+     WHERE id = $1 AND mentor_id = $2 AND is_deleted = FALSE
+     RETURNING id, name, description, start_date, end_date, mentor_id, created_at, updated_at`,
+    [id, mentorId]
+  );
+  return result.rows[0] || null;
+};
+
 const deleteById = async (id) => {
   const result = await pool.query(
     `UPDATE classes
@@ -71,4 +82,4 @@ const deleteById = async (id) => {
   return result.rows[0] || null;
 };
 
-export { findAll, findById, findByMentorId, create, update, deleteById };
+export { findAll, findById, findByMentorId, create, update, unassignMentor, deleteById };

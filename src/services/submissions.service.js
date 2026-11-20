@@ -95,8 +95,7 @@ const reviewSubmission = serviceAction(async (id, body, actor) => {
   if (record.status !== "SUBMITTED") throw new BadRequestError("Only submitted work can be reviewed");
   numberField(body.score, "score");
   if (body.feedback !== undefined && typeof body.feedback !== "string") throw new BadRequestError("feedback must be a string");
-  validatePositiveInteger(body.version, "version");
-  const version = expectedVersion(body, record);
+  const version = record.version;
   return transaction(async (db) => {
     const lockedAssignment = requireRecord(await assignments.findByIdForUpdate(assignment.id, db), "Assignment");
     if (body.score > Number(lockedAssignment.maximum_score)) throw new BadRequestError("score exceeds maximumScore");

@@ -19,17 +19,20 @@ const createClass = catchAsync(async (req, res) => {
   return sendSuccess(res, 201, "Created successfully", classroom);
 });
 
-const updateClass = catchAsync(async (req, res) => {
-  const classId = req.params.id;
-  const updateRequest = req.body;
-  const classroom = await classService.updateClass(classId, updateRequest, req.user);
-  return sendSuccess(res, 200, "Updated successfully", classroom);
-});
-
 const deleteClass = catchAsync(async (req, res) => {
   const classId = req.params.id;
   await classService.deleteClass(classId, req.user);
   return res.status(204).end();
 });
 
-export { getAllClasses, getClassById, createClass, updateClass, deleteClass };
+const setClassMentor = catchAsync(async (req, res) => {
+  const classroom = await classService.setClassMentor(req.params.id, req.body, req.user);
+  return sendSuccess(res, 200, "Class mentor assigned successfully", classroom);
+});
+
+const unassignClassMentor = catchAsync(async (req, res) => {
+  const classroom = await classService.unassignClassMentor(req.params.id, req.body, req.user);
+  return sendSuccess(res, 200, "Class mentor unassigned successfully", classroom);
+});
+
+export { getAllClasses, getClassById, createClass, deleteClass, setClassMentor, unassignClassMentor };
