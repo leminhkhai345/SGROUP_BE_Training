@@ -67,4 +67,12 @@ const deleteById = async (id) => {
   return result.rows[0] || null;
 };
 
-export { findAll, findById, findByClassId, create, update, deleteById };
+const countByClassId = async (classId) => {
+  const result = await pool.query(
+    "SELECT COUNT(id)::int AS count FROM lessons WHERE class_id = $1 AND is_deleted = FALSE",
+    [classId]
+  );
+  return result.rows[0]?.count ?? 0;
+};
+
+export { findAll, findById, findByClassId, countByClassId, create, update, deleteById };

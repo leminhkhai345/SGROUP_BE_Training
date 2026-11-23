@@ -80,4 +80,40 @@ const deleteById = async (id) => {
   return result.rows[0] || null;
 };
 
-export { findAll, findById, findByLessonId, findByMemberId, findByLessonAndMember, create, update, deleteById };
+const countCompletedByClassAndMember = async (classId, memberId) => {
+  const result = await pool.query(
+    `SELECT COUNT(lp.id)::int AS count
+     FROM lesson_progress lp
+     JOIN lessons l ON l.id = lp.lesson_id
+     WHERE l.class_id = $1
+       AND lp.member_id = $2
+       AND lp.is_deleted = FALSE
+       AND l.is_deleted = FALSE`,
+    [classId, memberId]
+  );
+  return result.rows[0]?.count ?? 0;
+};
+
+const deleteByLessonAndMember = async (lessonId, memberId) => {
+  const result = await pool.query(
+    `UPDATE lesson_progress
+     SET is_deleted = TRUE, updated_at = NOW()
+     WHERE lesson_id = $1 AND member_id = $2 AND is_deleted = FALSE
+     RETURNING *`,
+    [lessonId, memberId]
+  );
+  return result.rows[0] || null;
+};
+
+export {
+  findAll,
+  findById,
+  findByLessonId,
+  findByMemberId,
+  findByLessonAndMember,
+  countCompletedByClassAndMember,
+  deleteByLessonAndMember,
+  create,
+  update,
+  deleteById,
+};

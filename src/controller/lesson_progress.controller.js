@@ -11,44 +11,47 @@ const getAllLessonProgress = catchAsync(async (req, res) => {
 });
 
 const getLessonProgressById = catchAsync(async (req, res) => {
-  const lessonProgressid = req.params.id;
+  const lessonProgressId = req.params.id;
   const lessonProgress = await lessonProgressService.getLessonProgressById(
-    lessonProgressid,
+    lessonProgressId,
     req.user,
   );
   return sendSuccess(res, 200, "Retrieved successfully", lessonProgress);
 });
 
-const createLessonProgress = catchAsync(async (req, res) => {
-  const createRequest = req.body;
-  const lessonProgress = await lessonProgressService.createLessonProgress(
-    createRequest,
-    req.user,
-  );
-  return sendSuccess(res, 201, "Created successfully", lessonProgress);
+const completeLesson = catchAsync(async (req, res) => {
+  const lessonId = req.params.id;
+  const progress = await lessonProgressService.completeLesson(lessonId, req.user);
+  return sendSuccess(res, 201, "Lesson marked as completed", progress);
 });
 
-const updateLessonProgress = catchAsync(async (req, res) => {
-  const lessonProgressid = req.params.id;
-  const updateRequest = req.body;
-  const lessonProgress = await lessonProgressService.updateLessonProgress(
-    lessonProgressid,
-    updateRequest,
+const uncompleteLesson = catchAsync(async (req, res) => {
+  const lessonId = req.params.id;
+  await lessonProgressService.uncompleteLesson(lessonId, req.user);
+  return sendSuccess(res, 200, "Lesson completion undone successfully");
+});
+
+const getClassProgress = catchAsync(async (req, res) => {
+  const classId = req.params.id;
+  const progress = await lessonProgressService.getClassProgress(
+    classId,
+    req.query,
     req.user,
   );
-  return sendSuccess(res, 200, "Updated successfully", lessonProgress);
+  return sendSuccess(res, 200, "Retrieved progress successfully", progress);
 });
 
 const deleteLessonProgress = catchAsync(async (req, res) => {
-  const lessonProgressid = req.params.id;
-  await lessonProgressService.deleteLessonProgress(lessonProgressid, req.user);
+  const lessonProgressId = req.params.id;
+  await lessonProgressService.deleteLessonProgress(lessonProgressId, req.user);
   return res.status(204).end();
 });
 
 export {
   getAllLessonProgress,
   getLessonProgressById,
-  createLessonProgress,
-  updateLessonProgress,
+  completeLesson,
+  uncompleteLesson,
+  getClassProgress,
   deleteLessonProgress,
 };
